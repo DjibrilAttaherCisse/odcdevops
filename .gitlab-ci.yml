@@ -1,0 +1,37 @@
+image: eclipse-temurin:11-jdk
+
+variables:
+  # Options Maven pour réduire les logs inutiles dans GitLab CI
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+  # Dossier de cache local pour Maven
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+
+cache:
+  paths:
+    - .m2/repository/
+
+stages:
+  - test
+  - build
+
+test_job:
+  stage: test
+  script:
+    - chmod +x ./mvnw
+    - ./mvnw $MAVEN_CLI_OPTS clean test
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+
+build_job:
+  stage: build
+  script:
+    - chmod +x ./mvnw
+    - ./mvnw $MAVEN_CLI_OPTS clean package -DskipTests
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 1 week
+    name: "odcdevops-app-$CI_COMMIT_SHORT_SHA"

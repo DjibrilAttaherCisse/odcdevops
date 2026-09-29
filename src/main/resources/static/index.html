@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ODC DevOps - Gestion des Étudiants</title>
+    <meta name="description" content="Plateforme moderne de gestion des étudiants avec Spring Boot et H2 Database">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Background Gradient Glows -->
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+
+    <div class="app-layout">
+        <!-- Navigation Header -->
+        <header class="app-header">
+            <div class="header-container">
+                <div class="brand">
+                    <div class="brand-logo">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <div class="brand-text">
+                        <h1>ODC Campus</h1>
+                        <span class="brand-badge">DevOps v1.0</span>
+                    </div>
+                </div>
+
+                <div class="header-actions">
+                    <div class="system-status" id="systemStatus">
+                        <span class="status-indicator"></span>
+                        <span class="status-text">API Connectée</span>
+                    </div>
+                    <a href="/swagger-ui.html" target="_blank" class="nav-link-btn" title="Documentation Swagger OpenAPI">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Swagger Docs</span>
+                    </a>
+                    <a href="/h2-console" target="_blank" class="nav-link-btn" title="Console Base de Données H2">
+                        <i class="fa-solid fa-database"></i>
+                        <span>Console H2</span>
+                    </a>
+                    <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Changer le thème">
+                        <i class="fa-solid fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Container -->
+        <main class="main-content">
+            <!-- Metrics & Overview Section -->
+            <section class="metrics-grid">
+                <div class="metric-card glass-panel">
+                    <div class="metric-icon icon-primary">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-label">Total Étudiants</span>
+                        <h2 class="metric-value" id="metricTotalStudents">0</h2>
+                    </div>
+                    <div class="metric-trend trend-up">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                        <span>En direct</span>
+                    </div>
+                </div>
+
+                <div class="metric-card glass-panel">
+                    <div class="metric-icon icon-success">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-label">Base de Données</span>
+                        <h2 class="metric-value">H2 In-Memory</h2>
+                    </div>
+                    <div class="metric-tag">
+                        <span>Actif</span>
+                    </div>
+                </div>
+
+                <div class="metric-card glass-panel">
+                    <div class="metric-icon icon-accent">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-label">Architecture</span>
+                        <h2 class="metric-value">REST / JPA</h2>
+                    </div>
+                    <div class="metric-tag">
+                        <span>Clean Arch</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Students Management Panel -->
+            <section class="students-section glass-panel">
+                <!-- Section Header & Controls -->
+                <div class="section-toolbar">
+                    <div class="toolbar-title">
+                        <h2>Annuaire des Étudiants</h2>
+                        <p>Consultez, ajoutez, modifiez et supprimez les informations des étudiants.</p>
+                    </div>
+
+                    <div class="toolbar-actions">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                            <input type="text" id="searchInput" placeholder="Rechercher par nom, prénom ou adresse..." autocomplete="off">
+                            <button id="clearSearchBtn" class="clear-search-btn" title="Effacer la recherche">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <button id="refreshBtn" class="btn btn-secondary" title="Actualiser la liste">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+
+                        <button id="openAddModalBtn" class="btn btn-primary">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Nouvel Étudiant</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Content Container -->
+                <div class="table-wrapper">
+                    <table class="students-table" id="studentsTable">
+                        <thead>
+                            <tr>
+                                <th>Matricule</th>
+                                <th>Étudiant</th>
+                                <th>Adresse</th>
+                                <th>Date de Naissance</th>
+                                <th>Date d'Enregistrement</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody">
+                            <!-- Populated dynamically via app.js -->
+                        </tbody>
+                    </table>
+
+                    <!-- Loading State -->
+                    <div id="loadingState" class="state-container">
+                        <div class="spinner"></div>
+                        <p>Chargement des étudiants...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyState" class="state-container hidden">
+                        <div class="state-icon">
+                            <i class="fa-solid fa-user-slash"></i>
+                        </div>
+                        <h3>Aucun étudiant trouvé</h3>
+                        <p>Ajoutez un premier étudiant ou essayez un autre mot-clé de recherche.</p>
+                        <button class="btn btn-primary mt-3" onclick="openAddStudentModal()">
+                            <i class="fa-solid fa-plus"></i> Ajouter un étudiant
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Footer -->
+                <div class="table-footer">
+                    <span id="tableCountInfo">Affichage de 0 étudiant(s)</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Form (Add / Edit Student) -->
+    <div class="modal-backdrop" id="studentModalBackdrop">
+        <div class="modal-dialog glass-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon-badge" id="modalBadgeIcon">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <div>
+                        <h3 id="modalTitle">Ajouter un Étudiant</h3>
+                        <p class="modal-subtitle" id="modalSubtitle">Remplissez les informations ci-dessous</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="closeModalBtn" aria-label="Fermer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="studentForm" novalidate>
+                <input type="hidden" id="studentMatricule">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="studentNom">Nom <span class="required">*</span></label>
+                            <div class="input-with-icon">
+                                <i class="fa-regular fa-user"></i>
+                                <input type="text" id="studentNom" placeholder="Ex: Diallo" required>
+                            </div>
+                            <span class="field-error" id="errorNom"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="studentPrenom">Prénom <span class="required">*</span></label>
+                            <div class="input-with-icon">
+                                <i class="fa-regular fa-user"></i>
+                                <input type="text" id="studentPrenom" placeholder="Ex: Fatoumata" required>
+                            </div>
+                            <span class="field-error" id="errorPrenom"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="studentAddresse">Adresse <span class="required">*</span></label>
+                        <div class="input-with-icon">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <input type="text" id="studentAddresse" placeholder="Ex: Dakar, Sénégal" required>
+                        </div>
+                        <span class="field-error" id="errorAddresse"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="studentDateNaissance">Date de Naissance <span class="required">*</span></label>
+                        <div class="input-with-icon">
+                            <i class="fa-regular fa-calendar"></i>
+                            <input type="date" id="studentDateNaissance" required>
+                        </div>
+                        <span class="field-error" id="errorDateNaissance"></span>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelModalBtn">Annuler</button>
+                    <button type="submit" class="btn btn-primary" id="saveStudentBtn">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span id="saveBtnText">Enregistrer</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Student Details Modal -->
+    <div class="modal-backdrop" id="viewModalBackdrop">
+        <div class="modal-dialog glass-panel" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon-badge">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+                    <div>
+                        <h3>Profil Étudiant</h3>
+                        <p class="modal-subtitle">Fiche détaillée de l'étudiant</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="closeViewModalBtn" aria-label="Fermer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="modal-body" id="viewModalBody">
+                <!-- Dynamically rendered -->
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="closeViewModalBtn2">Fermer</button>
+                <button type="button" class="btn btn-primary" id="editFromViewBtn">
+                    <i class="fa-solid fa-pen-to-square"></i> Modifier
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-backdrop" id="deleteModalBackdrop">
+        <div class="modal-dialog modal-dialog-sm glass-panel" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon-badge danger">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <h3>Confirmer la suppression</h3>
+                        <p class="modal-subtitle">Cette action est irréversible</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="closeDeleteModalBtn" aria-label="Fermer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <p id="deleteModalMessage">Êtes-vous sûr de vouloir supprimer cet étudiant ?</p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fa-solid fa-trash"></i> Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Custom JS -->
+    <script src="js/app.js"></script>
+</body>
+</html>
